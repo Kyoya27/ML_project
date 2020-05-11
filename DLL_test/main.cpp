@@ -46,6 +46,7 @@ int main() {
 		{1, 0.6, 0.6},
 		{1, 0.55, 0.7}
 	};
+
 	//double inputs[3][2]{
 	//	{0.35, 0.5 },
 	//	{0.6, 0.6 },
@@ -72,7 +73,8 @@ int main() {
 	std::cout << linear_model_predict_classification(model, inputs[1], 2);
 	std::cout << linear_model_predict_classification(model, inputs[2], 2);
 
-	linear_model_train_classification(model, inputs, 3, 3, Y, 3, 1000, 0.01);
+	linear_model_train_classification(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
+	//linear_model_train_regression(model, inputs, 3, 3, Y, 3, 1000, 0.01);
 
 	std::cout << linear_model_predict_classification(model, inputs[0], 2);
 	std::cout << linear_model_predict_classification(model, inputs[1], 2);

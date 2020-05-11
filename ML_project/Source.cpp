@@ -7,10 +7,10 @@
 #include <cmath>
 #include <time.h>
 #include <iostream>
-#include <Eigen/Core>
+#include <Eigen/Dense>
 
-using Eigen::Matrix2d;
 
+using Eigen::Product;
 
 extern "C" {
     DLLEXPORT double* linear_model_create(int input_dim) {
@@ -54,20 +54,21 @@ extern "C" {
         }
     }
 
-    DLLEXPORT void linear_model_train_regression(double* model, double** dataset_inputs, int dataset_length, int inputs_size, double dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
-        //PseudoInverse
-        double b0 = 0;
-        double b1 = 0;
-
-        for (int i = 0; i < iterations_count * inputs_size; i++) {
-            int idx = i % inputs_size;
-            double p = b0 + b1 * dataset_inputs[idx][0];
-            double err = p - dataset_inputs[idx][1];
-            b0 = b0 - alpha * err;
-            b1 = b1 - alpha * err * dataset_inputs[idx][0];
-            model[0] = b1;
-            model[1] = b0;
-            model[2] = err;
-        }
-    }
+//    DLLEXPORT void linear_model_train_regression(double* model, double** dataset_inputs, int dataset_length, int inputs_size, double dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
+//        Eigen::MatrixXd eMatrix(dataset_length, dataset_length);
+//        for (int i = 0; i < dataset_length; ++i)
+//            eMatrix.row(i) = Eigen::VectorXd::Map(&dataset_inputs[i][0], dataset_length);
+//        Eigen::MatrixXd pinv = eMatrix.completeOrthogonalDecomposition().pseudoInverse();
+//        //Eigen::Matrix2d v = Eigen::Map<Eigen::MatrixXd>(model, 1, inputs_size + 1);
+//        Eigen::VectorXd v(model, inputs_size);
+//        //v = Eigen::Product(v, pinv);
+//
+////        v = v * 1;
+//        
+//  //      for (int i = 0; i <= inputs_size; i++) {
+//  //          model[i] = v(0, i);
+//    //    }
+//
+//        // std::cout << pinv;
+//    }
 }
