@@ -8,17 +8,19 @@
 #include <time.h>
 #include <iostream>
 #include <Eigen/Dense>
-
+#include <ctime>
 
 using Eigen::Product;
 
 extern "C" {
+
     DLLEXPORT double* linear_model_create(int input_dim) {
-        srand(time(NULL));
+        std::srand(std::time(nullptr));
+
         double* array = new double[input_dim];
         
         for (int i = 0; i < input_dim; i++) {
-            double rd = (double)(rand() / RAND_MAX);
+            double rd = (double)((std::rand() % 10000) / (double)10000);
             array[i] = rd;
         }
 
@@ -32,6 +34,7 @@ extern "C" {
             res += model[i+1] * inputs[i];
         }
 
+//        std::cout << "res = " << res << " model " << model[0] << " return = " << res + model[0] << std::endl;
         return res + model[0];
     }
 
@@ -43,8 +46,9 @@ extern "C" {
         //rosen
         
         for (int i = 0; i < iterations_count; i++) {
-            srand(time(NULL));
-            int k = rand() % inputs_size;
+            //srand(time(NULL));
+            std::srand(std::time(nullptr));
+            int k = std::rand() % dataset_length / dataset_length;
             double g_x_k = linear_model_predict_classification(model, dataset_inputs[k], inputs_size);
             double grad = alpha * (dataset_expected_outputs[k] - g_x_k);
             model[0] += grad * 1;

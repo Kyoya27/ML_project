@@ -5,6 +5,7 @@
 #endif
 
 #include <iostream>
+#include <time.h>
 
 extern "C" {
 	DLLEXPORT double* linear_model_create(int input_dim);
@@ -32,6 +33,8 @@ extern "C" {
 }
 
 int main() {
+	srand(time(NULL));
+
 	double blue_points[1][2] = {
 		{0.35, 0.5}
 	};
@@ -68,12 +71,19 @@ int main() {
 
 	double Y[3] = { 1, -1, -1 };
 
-	double* model = linear_model_create(3);
+	double* model = linear_model_create(2);
+	/*double* model = new double[3];
+	model[0] = 0.519944;
+	model[1] = 0.00601215;
+	model[2] = 0.226081;*/
+	for (int i = 0; i < 3; i++) {
+		std::cout << model[i] << " " << std::endl;
+	}
 	std::cout << linear_model_predict_classification(model, inputs[0], 2);
 	std::cout << linear_model_predict_classification(model, inputs[1], 2);
 	std::cout << linear_model_predict_classification(model, inputs[2], 2);
 
-	linear_model_train_classification(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
+	linear_model_train_classification(model, inputs, 3, 2, Y, 3, 10000, 0.01);
 	//linear_model_train_regression(model, inputs, 3, 3, Y, 3, 1000, 0.01);
 
 	std::cout << linear_model_predict_classification(model, inputs[0], 2);
