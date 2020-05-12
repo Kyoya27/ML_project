@@ -29,7 +29,7 @@ extern "C" {
 
     DLLEXPORT double linear_model_predict_regression(double* model, double* inputs, int inputs_size) {
         double res = 0;
-
+        std::cout << "input = " << *inputs << std::endl;
         for (int i = 0; i < inputs_size; i++) {
             res += model[i+1] * inputs[i];
         }
@@ -42,18 +42,20 @@ extern "C" {
         return linear_model_predict_regression(model, inputs, inputs_size) >= 0 ? 1.0 : -1.0;
     }
 
-    DLLEXPORT void linear_model_train_classification(double* model, double** dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
+    DLLEXPORT void linear_model_train_classification(double* model, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
         //rosen
-        
+        std::srand(std::time(nullptr));
         for (int i = 0; i < iterations_count; i++) {
             //srand(time(NULL));
-            std::srand(std::time(nullptr));
-            int k = std::rand() % dataset_length / dataset_length;
-            double g_x_k = linear_model_predict_classification(model, dataset_inputs[k], inputs_size);
+            
+            int k = floor(std::rand() % dataset_length);
+            int pos = k * inputs_size;
+            std::cout << "pos = " << pos << std::endl;
+            double g_x_k = linear_model_predict_classification(model, &dataset_inputs[pos], inputs_size);
             double grad = alpha * (dataset_expected_outputs[k] - g_x_k);
             model[0] += grad * 1;
             for (int j = 0; j < inputs_size; j++) {
-                model[j + 1] += grad * dataset_inputs[k][j];
+                model[j + 1] += grad * dataset_inputs[pos + j];//(&dataset_inputs)[k][j];
             }
         }
     }
