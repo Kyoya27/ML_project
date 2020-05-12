@@ -7,20 +7,26 @@
 #include <cmath>
 #include <time.h>
 #include <iostream>
-#include <Eigen/Dense>
 #include <ctime>
+#include <chrono>
+#include <random>
+#include <Eigen/Dense>
 
-using Eigen::Product;
+using Eigen::MatrixXd;
 
 extern "C" {
 
     DLLEXPORT double* linear_model_create(int input_dim) {
         std::srand(std::time(nullptr));
 
-        double* array = new double[input_dim];
+        auto array = new double[input_dim + 1];
         
-        for (int i = 0; i < input_dim; i++) {
-            double rd = (double)((std::rand() % 10000) / (double)10000);
+        std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
+        std::uniform_real_distribution<float> distribution{ -1, 1 };
+
+        for (int i = 0; i < input_dim + 1; i++) {
+           // auto rd = (double)((std::rand() % RAND_MAX) / (double)RAND_MAX);
+            auto rd = distribution(randomEngine);
             array[i] = rd;
         }
 
@@ -61,6 +67,25 @@ extern "C" {
         }
     }
 
+    DLLEXPORT void linear_model_train_regression(double* model, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
+       //training poarams number = input size
+        MatrixXd xm(dataset_length, inputs_size + 1);
+        MatrixXd ym(dataset_length, 1);
+
+        for (int i = 0; i < dataset_length; ++i) {
+            ym(i, 0) = dataset_expected_outputs[i];
+            xm(i, 0) = 1;
+            for (int j = 1; j < (inputs_size + 1); j++) {
+                xm(i, j) = dataset_inputs[(i * inputs_size + (j - 1))];
+            }
+        }
+
+        MatrixXd res = ((xm.transpose() * xm).inverse() * xm.transpose()) * ym;
+
+        for (int i = 0; i < inputs_size; i++) {
+            model[i] = res(i, 0);
+        }
+    }
     DLLEXPORT void clearArray(double* array) {
         free(array);
     }

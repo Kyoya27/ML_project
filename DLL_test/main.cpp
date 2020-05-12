@@ -20,7 +20,7 @@ extern "C" {
 		int iterations_count,
 		float alpha
 	);
-	/*DLLEXPORT void linear_model_train_regression(
+	DLLEXPORT void linear_model_train_regression(
 		double* model,
 		double* dataset_inputs,
 		int dataset_length,
@@ -29,11 +29,10 @@ extern "C" {
 		int outputs_size,
 		int iterations_count,
 		float alpha
-	);*/
+	);
 }
 
 int main() {
-	srand(time(NULL));
 
 	double blue_points[1][2] = {
 		{0.35, 0.5}
@@ -85,14 +84,14 @@ int main() {
 	model[1] = 0.00601215;
 	model[2] = 0.226081;*/
 	for (int i = 0; i < 3; i++) {
-		std::cout << model[i] << " " << std::endl;
+		std::cout << "model =" << model[i] << " " << std::endl;
 	}
 	std::cout << linear_model_predict_classification(model, &(inputs[0]), 2);
 	std::cout << linear_model_predict_classification(model, &(inputs[2]), 2);
 	std::cout << linear_model_predict_classification(model, &(inputs[4]), 2);
 
-	linear_model_train_classification(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
-	//linear_model_train_regression(model, inputs, 3, 3, Y, 3, 1000, 0.01);
+	//linear_model_train_classification(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
+	linear_model_train_regression(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
 
 	std::cout << linear_model_predict_classification(model, &(inputs[0]), 2);
 	std::cout << linear_model_predict_classification(model, &(inputs[2]), 2);
