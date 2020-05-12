@@ -29,7 +29,7 @@ extern "C" {
 
     DLLEXPORT double linear_model_predict_regression(double* model, double* inputs, int inputs_size) {
         double res = 0;
-        std::cout << "input = " << *inputs << std::endl;
+        //std::cout << "input = " << *inputs << std::endl;
         for (int i = 0; i < inputs_size; i++) {
             res += model[i+1] * inputs[i];
         }
@@ -49,17 +49,21 @@ extern "C" {
             //srand(time(NULL));
             
             int k = floor(std::rand() % dataset_length);
+            //std::cout << "picked = " << k << std::endl;
             int pos = k * inputs_size;
-            std::cout << "pos = " << pos << std::endl;
+            //std::cout << "pos = " << pos << std::endl;
             double g_x_k = linear_model_predict_classification(model, &dataset_inputs[pos], inputs_size);
             double grad = alpha * (dataset_expected_outputs[k] - g_x_k);
-            model[0] += grad * 1;
+            model[0] += grad;
             for (int j = 0; j < inputs_size; j++) {
                 model[j + 1] += grad * dataset_inputs[pos + j];//(&dataset_inputs)[k][j];
             }
         }
     }
 
+    DLLEXPORT void clearArray(double* array) {
+        free(array);
+    }
 //    DLLEXPORT void linear_model_train_regression(double* model, double** dataset_inputs, int dataset_length, int inputs_size, double dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
 //        Eigen::MatrixXd eMatrix(dataset_length, dataset_length);
 //        for (int i = 0; i < dataset_length; ++i)
