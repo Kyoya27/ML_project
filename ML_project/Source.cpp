@@ -74,10 +74,87 @@ extern "C" {
         mlp->x = nodes;
     }
 
-    DLLEXPORT void mlp_model_train_classification(MLP* model, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha) {
+    DLLEXPORT double mlp_model_predict_regression(MLP* mlp) {
+        double somme = 0;
+        for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
+            somme += mlp->x[mlp->npl_size - 1][i] * mlp->w[mlp->npl_size - 1][i][0];
+        }
 
+        return somme;
     }
 
+    DLLEXPORT double mlp_model_predict_classification(MLP* mlp) {
+        return mlp_model_predict_regression(mlp) >= 0 ? 1.0 : -1.0;
+    }
+
+    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha) {
+        //deltas dernière
+        const int L = mlp->npl[mlp->npl_size - 1];
+        double** deltas = new double* [mlp->npl_size];
+        deltas[mlp->npl_size - 1] = new double[L];
+
+        for (int j = 0; j < L; j++) {
+            deltas[mlp->npl_size - 1][j] = (1 - pow(mlp->x[L][j], 2)) * (mlp->x[L][j] - dataset_expected_outputs[j % outputs_size]);
+        }
+
+        for (int l = mlp->npl_size - 1; l >= 0; l--) {
+            deltas[l] = new double[mlp->npl[l] + 1];
+            for (int i = 0; i < mlp->npl[l] + 1; i++) {
+                double somme = 0;
+                for (int j = 0; j < mlp->npl[l + 1]; j++) { // peut etre pas + 1 ?
+                    somme += deltas[l + 1][j] * mlp->w[l + 1][i][j];
+                }
+                deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
+            }
+        }
+
+        for (int l = 1; l < mlp->npl_size; l++) {
+            for (int i = 0; i < mlp->npl[l] + 1; i++) {
+                for (int j = 0; j < mlp->npl[l + 1] + 1; j++) {
+                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l - 1][i] * deltas[l][j]);
+                }
+            }
+        }
+
+
+        mlp->deltas = deltas;
+    }
+
+    DLLEXPORT void mlp_model_train_regression(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha) {
+
+        int rd = std::rand() % dataset_length;
+
+        //deltas dernière
+        const int L = mlp->npl[mlp->npl_size - 1];
+        double** deltas = new double* [mlp->npl_size];
+        deltas[mlp->npl_size - 1] = new double[L + 1];
+
+        for (int j = 0; j < L; j++) {
+            deltas[mlp->npl_size - 1][j] = mlp->x[L][j] - dataset_expected_outputs[j];
+        }
+
+        for (int l = L - 1; l >= 0; l--) {
+            deltas[l] = new double[mlp->npl[l] + 1];
+            for (int i = 0; i < mlp->npl[l] + 1; i++) {
+                double somme = 0;
+                for (int j = 0; j < mlp->npl[l + 1] + 1; j++) { // peut etre pas + 1 ?
+                    somme += deltas[l + 1][j] * mlp->w[l + 1][i][j];
+                }
+                deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
+            }
+        }
+
+        for (int l = 1; l < mlp->npl_size; l++) {
+            for (int i = 0; i < mlp->npl[l] + 1; i++) {
+                for (int j = 0; j < mlp->npl[l + 1] + 1; j++) {
+                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l - 1][i] * deltas[l][j]);
+                }
+            }
+        }
+
+
+        mlp->deltas = deltas;
+    }
 
 
 
