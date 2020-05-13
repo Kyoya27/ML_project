@@ -57,7 +57,6 @@ extern "C" {
 
         for (int l = 1; l < mlp->npl_size; l++) {
             nodes[l] = new double[mlp->npl[l] + 1];
-            nodes[l][0] = 1;
             for (int i = 0; i < mlp->npl[l]; i++) {
                 //nodes[l][i + 1] = mlp->w[l][i]
                 double sum = 0;
@@ -66,7 +65,7 @@ extern "C" {
                     sum += w;
                 }
 
-                nodes[l][i + 1] = tanh(sum);
+                nodes[l][i] = tanh(sum);
             }
         }
 
@@ -78,8 +77,7 @@ extern "C" {
         for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
             somme += mlp->x[mlp->npl_size - 1][i] * mlp->w[mlp->npl_size - 1][i][0];
         }
-
-        std::cout << "somme = " << somme << std::endl;
+        std::cout << somme << std::endl;
         return somme;
     }
 
@@ -92,32 +90,39 @@ extern "C" {
         //deltas dernière
         generate_nodes(mlp, dataset_inputs);
 
-        const int L = mlp->npl[mlp->npl_size - 1];
+        const int L = mlp->npl_size - 1;
         double** deltas = new double* [mlp->npl_size];
         deltas[mlp->npl_size - 1] = new double[L];
 
-        for (int j = 0; j < L; j++) {
-            deltas[mlp->npl_size - 1][j] = (1 - pow(mlp->x[L][j], 2)) * (mlp->x[L][j] - dataset_expected_outputs[j % outputs_size]);
+        for (int j = 0; j < mlp->npl[mlp->npl_size - 1]; j++) {
+            deltas[mlp->npl_size - 1][j] = (1 - pow(mlp->x[mlp->npl_size - 1][j], 2)) * (mlp->x[mlp->npl_size - 1][j] - dataset_expected_outputs[j % outputs_size]);
         }
 
-        for (int l = mlp->npl_size - 1; l >= 0; l--) {
+        for (int l = mlp->npl_size - 2; l >= 0; l--) {
             deltas[l] = new double[mlp->npl[l] + 1];
             for (int i = 0; i < mlp->npl[l] + 1; i++) {
                 double somme = 0;
                 for (int j = 0; j < mlp->npl[l + 1]; j++) {
                     somme += deltas[l + 1][j] * mlp->w[l][i][j];
                 }
-                deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
+                deltas[l][i] = (1 - pow(mlp->x[l][i+1], 2)) * somme;
             }
         }
 
-        for (int l = 1; l < mlp->npl_size; l++) {
-            for (int i = 0; i < mlp->npl[l] + 1; i++) {
-                for (int j = 0; j < mlp->npl[l + 1] + 1; j++) {
-                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l - 1][i] * deltas[l][j]);
+        std::cout << "Weights :" << std::endl << "[" << std::endl;
+        for (int l = 0; l < mlp->npl_size -1; l++) {
+            std::cout << "\t[" << std::endl;
+            for (int i = 0; i < mlp->npl[l]+1; i++) {
+                std::cout << "\t\t[ ";
+                for (int j = 0; j < mlp->npl[l + 1]; j++) {
+                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l][i+1] * deltas[l][j]);
+                    std::cout << mlp->w[l][i][j] << " ";
                 }
+                std::cout << "]" << std::endl;
             }
+            std::cout << "\t]" << std::endl;
         }
+        std::cout << "]" << std::endl;
 
 
         mlp->deltas = deltas;
@@ -180,12 +185,11 @@ extern "C" {
 
     DLLEXPORT double linear_model_predict_regression(double* model, double* inputs, int inputs_size) {
         double res = 0;
-        //std::cout << "input = " << *inputs << std::endl;
+
         for (int i = 0; i < inputs_size; i++) {
             res += model[i+1] * inputs[i];
         }
 
-//        std::cout << "res = " << res << " model " << model[0] << " return = " << res + model[0] << std::endl;
         return res + model[0];
     }
 
@@ -200,9 +204,9 @@ extern "C" {
             //srand(time(NULL));
             
             int k = floor(std::rand() % dataset_length);
-            //std::cout << "picked = " << k << std::endl;
+
             int pos = k * inputs_size;
-            //std::cout << "pos = " << pos << std::endl;
+
             double g_x_k = linear_model_predict_classification(model, &dataset_inputs[pos], inputs_size);
             double grad = alpha * (dataset_expected_outputs[k] - g_x_k);
             model[0] += grad;

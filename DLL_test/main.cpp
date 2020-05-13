@@ -89,7 +89,7 @@ int main() {
 	inputs[5] = 0.7;
 
 
-	//double Y[3] = { -1, -1, 1 };
+	double Y[3] = { -1, -1, 1 };
 
 	/*double* model = linear_model_create(2);
 	//double* model = new double[3];
@@ -115,15 +115,16 @@ int main() {
 		std::cout << model[i] << " ";
 	}*/
 
-	int npl[] = { 6, 3, 1 };
-	double Y[3] = { -1, 1, -1};
+	int npl[] = { 2, 3, 1 };
 
 	MLP* model = create_mlp_model(npl, 3); 
 
 	std::cout << mlp_model_predict_classification(model, &(inputs[0])) << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[2])) << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[4])) << std::endl;
+	std::cout << std::endl;
 	mlp_model_train_classification(model, inputs, 3, 2, Y, 2, 0.01);
+	std::cout << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[0])) << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[2])) << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[4])) << std::endl;
