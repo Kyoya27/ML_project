@@ -19,7 +19,7 @@ extern "C" {
     // ([2, 3, 4, 5], 4)
     DLLEXPORT MLP* create_mlp_model(int* npl, int npl_size) {
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
-        std::uniform_real_distribution<float> distribution{ 0, 1 };
+        std::uniform_real_distribution<float> distribution{ -1, 1 };
 
         MLP* mlp = new MLP;
         mlp->npl = npl;
@@ -55,18 +55,25 @@ extern "C" {
             nodes[0][i + 1] = inputs[i];
         }
 
-        for (int l = 1; l < mlp->npl_size; l++) {
-            nodes[l] = new double[mlp->npl[l] + 1];
+        for (int l = 1; l < mlp->npl_size - 1; l++) {
+            nodes[l] = (double*)malloc((mlp->npl[l] + 1) * sizeof(double));
+            nodes[l][0] = 1;
             for (int i = 0; i < mlp->npl[l]; i++) {
-                //nodes[l][i + 1] = mlp->w[l][i]
                 double sum = 0;
-                for (int j = 0; j < mlp->npl[l - 1]; j++) {
-                    double w =  mlp->w[l - 1][i][j] * nodes[l - 1][j];
-                    sum += w;
+                for (int j = 0; j < mlp->npl[l - 1] + 1; j++) {
+                    sum += nodes[l - 1][j] * mlp->w[l - 1][j][i];
                 }
-
-                nodes[l][i] = tanh(sum);
+                nodes[l][i + 1] = tanh(sum);
             }
+        }
+
+        nodes[mlp->npl_size - 1] = (double*)malloc(mlp->npl[mlp->npl_size - 1] * sizeof(double));
+        for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
+            double sum = 0;
+            for (int j = 0; j < mlp->npl[mlp->npl_size - 2] + 1; j++) {
+                sum += nodes[mlp->npl_size - 2][j] * mlp->w[mlp->npl_size - 2][j][i];
+            }
+            nodes[mlp->npl_size - 1][i] = tanh(sum);
         }
 
         mlp->x = nodes;
@@ -105,7 +112,7 @@ extern "C" {
                 for (int j = 0; j < mlp->npl[l + 1]; j++) {
                     somme += deltas[l + 1][j] * mlp->w[l][i][j];
                 }
-                deltas[l][i] = (1 - pow(mlp->x[l][i+1], 2)) * somme;
+                deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
             }
         }
 
@@ -115,12 +122,22 @@ extern "C" {
             for (int i = 0; i < mlp->npl[l]+1; i++) {
                 std::cout << "\t\t[ ";
                 for (int j = 0; j < mlp->npl[l + 1]; j++) {
-                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l][i+1] * deltas[l][j]);
+                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l][i] * deltas[l][j]);
                     std::cout << mlp->w[l][i][j] << " ";
                 }
                 std::cout << "]" << std::endl;
             }
             std::cout << "\t]" << std::endl;
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "Delta :" << std::endl << "[" << std::endl;
+        for (int l = 0; l < mlp->npl_size; l++) {
+            std::cout << "\t[ ";
+            for (int i = 0; i < mlp->npl[l]; i++) {
+                std::cout << deltas[l][i] << " ";
+            }
+            std::cout << "]" << std::endl;
         }
         std::cout << "]" << std::endl;
 
