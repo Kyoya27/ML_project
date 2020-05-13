@@ -8,6 +8,14 @@
 #include <time.h>
 
 extern "C" {
+	DLLEXPORT typedef struct MLP {
+		int* npl;
+		int npl_size;
+		double*** w;
+		double** x;
+		double** deltas;
+	} MLP;
+
 	DLLEXPORT double* linear_model_create(int input_dim);
 	DLLEXPORT double linear_model_predict_classification(double* model, double* inputs, int inputs_size);
 	DLLEXPORT void linear_model_train_classification(
@@ -26,10 +34,11 @@ extern "C" {
 		int dataset_length,
 		int inputs_size,
 		double* dataset_expected_outputs,
-		int outputs_size,
-		int iterations_count,
-		float alpha
+		int outputs_size
 	);
+
+	DLLEXPORT MLP* create_mlp_model(int* npl, int npl_size);
+	DLLEXPORT void generate_nodes(MLP* mlp, double* inputs);
 }
 
 int main() {
@@ -76,13 +85,13 @@ int main() {
 	inputs[5] = 0.7;
 
 
-	double Y[3] = { 1, -1, -1 };
+	double Y[3] = { -1, -1, 1 };
 
-	double* model = linear_model_create(2);
-	/*double* model = new double[3];
-	model[0] = 0.519944;
-	model[1] = 0.00601215;
-	model[2] = 0.226081;*/
+	/*double* model = linear_model_create(2);
+	//double* model = new double[3];
+	//model[0] = 0.519944;
+	//model[1] = 0.00601215;
+	//model[2] = 0.226081;
 	for (int i = 0; i < 3; i++) {
 		std::cout << "model =" << model[i] << " " << std::endl;
 	}
@@ -91,7 +100,7 @@ int main() {
 	std::cout << linear_model_predict_classification(model, &(inputs[4]), 2);
 
 	//linear_model_train_classification(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
-	linear_model_train_regression(model, inputs, 3, 2, Y, 3, 1000000, 0.01);
+	linear_model_train_regression(model, inputs, 3, 2, Y, 3);
 
 	std::cout << linear_model_predict_classification(model, &(inputs[0]), 2);
 	std::cout << linear_model_predict_classification(model, &(inputs[2]), 2);
@@ -100,7 +109,12 @@ int main() {
 
 	for (int i = 0; i < 3; i++) {
 		std::cout << model[i] << " ";
-	}
-	
+	}*/
+
+	int npl[] = { 2, 3, 3 };
+
+	MLP* model = create_mlp_model(npl, 3); 
+	generate_nodes(model, inputs);
+
 	return 0;
 }

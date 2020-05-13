@@ -15,6 +15,88 @@
 using Eigen::MatrixXd;
 
 extern "C" {
+    DLLEXPORT typedef struct MLP {
+        int* npl;
+        int npl_size;
+        double*** w;
+        double** x;
+        double** deltas;
+    } MLP;
+
+    // ([2, 3, 4, 5], 4)
+    DLLEXPORT MLP* create_mlp_model(int* npl, int npl_size) {
+        std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
+        std::uniform_real_distribution<float> distribution{ 0, 1 };
+
+        MLP* mlp = new MLP;
+        mlp->npl = npl;
+        mlp->npl_size = npl_size;
+
+
+        double*** w1 = new double**[npl_size];
+        for (int l = 0; l < npl_size - 1; l++) {
+            w1[l] = new double* [npl[l] + 1];
+            for (int i = 0; i < npl[l]; i++) {
+                w1[l][i] = new double[npl[l + 1]];
+                for (int j = 0; j < npl[l + 1]; j++) {
+                    w1[l][i][j] = distribution(randomEngine);
+                }
+            }
+        }
+
+        w1[npl_size - 1] = new double*[npl[npl_size - 1]];
+        for (int i = 0; i < npl[npl_size - 1]; i++) {
+            w1[npl_size - 1][i] = new double(distribution(randomEngine));
+        }
+
+        mlp->w = w1;
+
+        return mlp;
+    }
+
+    DLLEXPORT void generate_nodes(MLP* mlp, double* inputs) {
+        double** nodes = new double* [mlp->npl_size];
+
+        nodes[0] = new double[mlp->npl[0] + 1];
+        nodes[0][0] = 1;
+        for (int i = 0; i < mlp->npl[0]; i++) {
+            nodes[0][i + 1] = inputs[i];
+        }
+
+        for (int l = 1; l < mlp->npl_size; l++) {
+            nodes[l] = new double[mlp->npl[l] + 1];
+            nodes[l][0] = 1;
+            for (int i = 0; i < mlp->npl[l]; i++) {
+                //nodes[l][i + 1] = mlp->w[l][i]
+                double sum = 0;
+                for (int j = 0; j < mlp->npl[l - 1]; j++) {
+                    double w =  mlp->w[l - 1][i][j] * nodes[l - 1][j];
+                    sum += w;
+                }
+
+                nodes[l][i + 1] = tanh(sum);
+            }
+        }
+
+        mlp->x = nodes;
+    }
+
+    DLLEXPORT void mlp_model_train_classification(MLP* model, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha) {
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     DLLEXPORT double* linear_model_create(int input_dim) {
         std::srand(std::time(nullptr));
@@ -67,8 +149,9 @@ extern "C" {
         }
     }
 
-    DLLEXPORT void linear_model_train_regression(double* model, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
-       //training poarams number = input size
+    DLLEXPORT void linear_model_train_regression(double* model, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size) {
+        //double adataset_inputs[6] = { 1,1,2,1,3,1 };
+
         MatrixXd xm(dataset_length, inputs_size + 1);
         MatrixXd ym(dataset_length, 1);
 
@@ -80,30 +163,21 @@ extern "C" {
             }
         }
 
-        MatrixXd res = ((xm.transpose() * xm).inverse() * xm.transpose()) * ym;
+        auto transpose = xm.transpose();
+        auto xxm = transpose * xm;
+        auto inverse = xxm.inverse();
+        auto t2 = xm.transpose();
+        auto big = inverse * t2;
+        auto res = big * ym;
 
-        for (int i = 0; i < inputs_size; i++) {
+        //MatrixXd res = ((xm.transpose() * xm).inverse() * xm.transpose()) * ym;
+
+        for (int i = 0; i < inputs_size + 1; i++) {
             model[i] = res(i, 0);
         }
     }
+
     DLLEXPORT void clearArray(double* array) {
         free(array);
     }
-//    DLLEXPORT void linear_model_train_regression(double* model, double** dataset_inputs, int dataset_length, int inputs_size, double dataset_expected_outputs, int outputs_size, int iterations_count, float alpha) {
-//        Eigen::MatrixXd eMatrix(dataset_length, dataset_length);
-//        for (int i = 0; i < dataset_length; ++i)
-//            eMatrix.row(i) = Eigen::VectorXd::Map(&dataset_inputs[i][0], dataset_length);
-//        Eigen::MatrixXd pinv = eMatrix.completeOrthogonalDecomposition().pseudoInverse();
-//        //Eigen::Matrix2d v = Eigen::Map<Eigen::MatrixXd>(model, 1, inputs_size + 1);
-//        Eigen::VectorXd v(model, inputs_size);
-//        //v = Eigen::Product(v, pinv);
-//
-////        v = v * 1;
-//        
-//  //      for (int i = 0; i <= inputs_size; i++) {
-//  //          model[i] = v(0, i);
-//    //    }
-//
-//        // std::cout << pinv;
-//    }
 }
