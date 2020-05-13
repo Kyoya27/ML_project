@@ -23,6 +23,7 @@
     <ProjectGuid>{10C56B61-18A4-45C8-9FAB-A0D4FE927955}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>MLproject</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -151,10 +152,10 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ClInclude Include="source.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source.h" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
