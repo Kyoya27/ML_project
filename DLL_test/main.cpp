@@ -123,7 +123,7 @@ int main() {
 	std::cout << mlp_model_predict_classification(model, &(inputs[2])) << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[4])) << std::endl;
 	std::cout << std::endl;
-	mlp_model_train_classification(model, inputs, 3, 2, Y, 2, 0.01);
+	mlp_model_train_classification(model, inputs, 3, 2, Y, 2, 0.1);
 	std::cout << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[0])) << std::endl;
 	std::cout << mlp_model_predict_classification(model, &(inputs[2])) << std::endl;
