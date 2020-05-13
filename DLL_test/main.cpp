@@ -39,8 +39,8 @@ extern "C" {
 
 	DLLEXPORT MLP* create_mlp_model(int* npl, int npl_size);
 	DLLEXPORT void generate_nodes(MLP* mlp, double* inputs);
-	DLLEXPORT double mlp_model_predict_regression(MLP* mlp);
-	DLLEXPORT double mlp_model_predict_classification(MLP* mlp);
+	DLLEXPORT double mlp_model_predict_regression(MLP* mlp, double* inputs);
+	DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs);
 	DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha);
 	DLLEXPORT void mlp_model_train_regression(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha);
 }
@@ -116,14 +116,17 @@ int main() {
 	}*/
 
 	int npl[] = { 6, 3, 1 };
-	double Y[2] = { -1, 1 };
+	double Y[3] = { -1, 1, -1};
 
 	MLP* model = create_mlp_model(npl, 3); 
-	generate_nodes(model, inputs);
 
-	std::cout << mlp_model_predict_classification(model) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[0])) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[2])) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[4])) << std::endl;
 	mlp_model_train_classification(model, inputs, 3, 2, Y, 2, 0.01);
-	std::cout << mlp_model_predict_classification(model) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[0])) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[2])) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[4])) << std::endl;
 
 	return 0;
 }

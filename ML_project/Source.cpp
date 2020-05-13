@@ -25,7 +25,6 @@ extern "C" {
         mlp->npl = npl;
         mlp->npl_size = npl_size;
 
-
         double*** w1 = new double**[npl_size];
         for (int l = 0; l < npl_size - 1; l++) {
             w1[l] = new double* [npl[l] + 1];
@@ -75,21 +74,24 @@ extern "C" {
     }
 
     DLLEXPORT double mlp_model_predict_regression(MLP* mlp) {
-        
         double somme = 0;
         for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
             somme += mlp->x[mlp->npl_size - 1][i] * mlp->w[mlp->npl_size - 1][i][0];
         }
 
+        std::cout << "somme = " << somme << std::endl;
         return somme;
     }
 
-    DLLEXPORT double mlp_model_predict_classification(MLP* mlp) {
+    DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs) {
+        generate_nodes(mlp, inputs);
         return mlp_model_predict_regression(mlp) >= 0 ? 1.0 : -1.0;
     }
 
     DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha) {
         //deltas dernière
+        generate_nodes(mlp, dataset_inputs);
+
         const int L = mlp->npl[mlp->npl_size - 1];
         double** deltas = new double* [mlp->npl_size];
         deltas[mlp->npl_size - 1] = new double[L];
@@ -123,7 +125,7 @@ extern "C" {
 
     DLLEXPORT void mlp_model_train_regression(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha) {
 
-        int rd = std::rand() % dataset_length;
+        generate_nodes(mlp, dataset_inputs);
 
         //deltas dernière
         const int L = mlp->npl[mlp->npl_size - 1];
