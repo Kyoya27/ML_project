@@ -11,18 +11,11 @@
 #include <chrono>
 #include <random>
 #include <Eigen/Dense>
+#include "source.h"
 
 using Eigen::MatrixXd;
 
 extern "C" {
-    DLLEXPORT typedef struct MLP {
-        int* npl;
-        int npl_size;
-        double*** w;
-        double** x;
-        double** deltas;
-    } MLP;
-
     // ([2, 3, 4, 5], 4)
     DLLEXPORT MLP* create_mlp_model(int* npl, int npl_size) {
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());

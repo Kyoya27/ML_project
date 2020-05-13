@@ -7,15 +7,15 @@
 #include <iostream>
 #include <time.h>
 
-extern "C" {
-	DLLEXPORT typedef struct MLP {
-		int* npl;
-		int npl_size;
-		double*** w;
-		double** x;
-		double** deltas;
-	} MLP;
+typedef struct MLP {
+	int* npl;
+	int npl_size;
+	double*** w;
+	double** x;
+	double** deltas;
+} MLP;
 
+extern "C" {
 	DLLEXPORT double* linear_model_create(int input_dim);
 	DLLEXPORT double linear_model_predict_classification(double* model, double* inputs, int inputs_size);
 	DLLEXPORT void linear_model_train_classification(
@@ -111,7 +111,7 @@ int main() {
 		std::cout << model[i] << " ";
 	}*/
 
-	int npl[] = { 2, 3, 3 };
+	int npl[] = { 6, 3, 3 };
 
 	MLP* model = create_mlp_model(npl, 3); 
 	generate_nodes(model, inputs);
