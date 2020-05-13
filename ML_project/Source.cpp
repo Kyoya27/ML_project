@@ -29,7 +29,7 @@ extern "C" {
         double*** w1 = new double**[npl_size];
         for (int l = 0; l < npl_size - 1; l++) {
             w1[l] = new double* [npl[l] + 1];
-            for (int i = 0; i < npl[l]; i++) {
+            for (int i = 0; i < npl[l] + 1; i++) {
                 w1[l][i] = new double[npl[l + 1]];
                 for (int j = 0; j < npl[l + 1]; j++) {
                     w1[l][i][j] = distribution(randomEngine);
@@ -75,6 +75,7 @@ extern "C" {
     }
 
     DLLEXPORT double mlp_model_predict_regression(MLP* mlp) {
+        
         double somme = 0;
         for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
             somme += mlp->x[mlp->npl_size - 1][i] * mlp->w[mlp->npl_size - 1][i][0];
@@ -101,8 +102,8 @@ extern "C" {
             deltas[l] = new double[mlp->npl[l] + 1];
             for (int i = 0; i < mlp->npl[l] + 1; i++) {
                 double somme = 0;
-                for (int j = 0; j < mlp->npl[l + 1]; j++) { // peut etre pas + 1 ?
-                    somme += deltas[l + 1][j] * mlp->w[l + 1][i][j];
+                for (int j = 0; j < mlp->npl[l + 1]; j++) {
+                    somme += deltas[l + 1][j] * mlp->w[l][i][j];
                 }
                 deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
             }
@@ -155,16 +156,6 @@ extern "C" {
 
         mlp->deltas = deltas;
     }
-
-
-
-
-
-
-
-
-
-
 
 
 
