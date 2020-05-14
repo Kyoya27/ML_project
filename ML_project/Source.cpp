@@ -76,7 +76,7 @@ extern "C" {
         mlp->x = nodes;
     }
 
-    DLLEXPORT double mlp_model_predict_regression(MLP* mlp) {
+    DLLEXPORT double* mlp_model_predict_regression(MLP* mlp) {
    /*     double somme = 0;
         for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
 
@@ -84,12 +84,13 @@ extern "C" {
         }
 
         return somme;*/
-        return mlp->x[mlp->npl_size - 1][1];
+        return mlp->x[mlp->npl_size - 1];
     }
 
-    DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs, bool isReg) {
+    DLLEXPORT double* mlp_model_predict_classification(MLP* mlp, double* inputs, bool isReg) {
         generate_nodes(mlp, inputs, isReg);
-        return mlp_model_predict_regression(mlp) >= 0 ? 1.0 : -1.0;
+        //return mlp_model_predict_regression(mlp) >= 0 ? 1.0 : -1.0;
+        return mlp->x[mlp->npl_size - 1];
     }
 
     DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg) {
@@ -133,6 +134,7 @@ extern "C" {
 
         mlp->deltas = deltas;
     }
+
     DLLEXPORT void mlp_model_train_regression(MLP * mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg) {
         //deltas dernière
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
