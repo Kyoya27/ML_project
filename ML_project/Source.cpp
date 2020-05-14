@@ -46,7 +46,7 @@ extern "C" {
         return mlp;
     }
 
-    DLLEXPORT void generate_nodes(MLP* mlp, double* inputs) {
+    DLLEXPORT void generate_nodes(MLP* mlp, double* inputs, bool isReg) {
         double** nodes = new double* [mlp->npl_size];
 
         nodes[0] = new double[mlp->npl[0] + 1];
@@ -63,18 +63,15 @@ extern "C" {
                 for (int j = 0; j < mlp->npl[l - 1] + 1; j++) {
                     sum += nodes[l - 1][j] * mlp->w[l][j][i+1];
                 }
-                nodes[l][i + 1] = tanh(sum);
+                if (isReg == true) {
+                    nodes[l][i + 1] = sum;
+                } else {
+                    nodes[l][i + 1] = tanh(sum);
+                }
+                
             }
         }
 
-        //nodes[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1]];
-        //for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
-        //    double sum = 0;
-        //    for (int j = 0; j < mlp->npl[mlp->npl_size - 2] + 1; j++) {
-        //        sum += nodes[mlp->npl_size - 2][j] * mlp->w[mlp->npl_size - 2][j][i];
-        //    }
-        //    nodes[mlp->npl_size - 1][i] = tanh(sum);
-        //}
 
         mlp->x = nodes;
     }
@@ -90,12 +87,12 @@ extern "C" {
         return mlp->x[mlp->npl_size - 1][1];
     }
 
-    DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs) {
-        generate_nodes(mlp, inputs);
+    DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs, bool isReg) {
+        generate_nodes(mlp, inputs, isReg);
         return mlp_model_predict_regression(mlp) >= 0 ? 1.0 : -1.0;
     }
 
-    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha) {
+    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg) {
         //deltas dernière
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
         std::uniform_real_distribution<float> distribution{ 0, 1 };
@@ -105,7 +102,7 @@ extern "C" {
             auto index = (int)floor(distribution(randomEngine) * dataset_length);
             auto trainingPosition = index * mlp->npl[0];
             auto expectedPosition = index * mlp->npl[mlp->npl_size - 1];
-            generate_nodes(mlp, &(dataset_inputs[trainingPosition]));
+            generate_nodes(mlp, &(dataset_inputs[trainingPosition]), isReg);
 
             
             deltas[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1] + 1];
@@ -136,39 +133,44 @@ extern "C" {
 
         mlp->deltas = deltas;
     }
-
-    DLLEXPORT void mlp_model_train_regression(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha) {
-
-        generate_nodes(mlp, dataset_inputs);
-
+    DLLEXPORT void mlp_model_train_regression(MLP * mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg) {
         //deltas dernière
-        const int L = mlp->npl[mlp->npl_size - 1];
+        std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
+        std::uniform_real_distribution<float> distribution{ 0, 1 };
         double** deltas = new double* [mlp->npl_size];
-        deltas[mlp->npl_size - 1] = new double[L + 1];
 
-        for (int j = 0; j < L; j++) {
-            deltas[mlp->npl_size - 1][j] = mlp->x[L][j] - dataset_expected_outputs[j];
-        }
+        for (int e = 0; e < epoch; e++) {
+            auto index = (int)floor(distribution(randomEngine) * dataset_length);
+            auto trainingPosition = index * mlp->npl[0];
+            auto expectedPosition = index * mlp->npl[mlp->npl_size - 1];
+            generate_nodes(mlp, &(dataset_inputs[trainingPosition]), isReg);
 
-        for (int l = L - 1; l >= 0; l--) {
-            deltas[l] = new double[mlp->npl[l] + 1];
-            for (int i = 0; i < mlp->npl[l] + 1; i++) {
-                double somme = 0;
-                for (int j = 0; j < mlp->npl[l + 1] + 1; j++) { // peut etre pas + 1 ?
-                    somme += deltas[l + 1][j] * mlp->w[l + 1][i][j];
+
+            deltas[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1] + 1];
+
+            for (int j = 1; j < mlp->npl[mlp->npl_size - 1] + 1; j++) {
+                deltas[mlp->npl_size - 1][j] = (mlp->x[mlp->npl_size - 1][j] - dataset_expected_outputs[j - 1 + expectedPosition]);
+            }
+
+            for (int l = mlp->npl_size - 2; l >= 1; l--) {
+                deltas[l] = new double[mlp->npl[l] + 1];
+                for (int i = 1; i < mlp->npl[l] + 1; i++) {
+                    double somme = 0;
+                    for (int j = 1; j < mlp->npl[l + 1] + 1; j++) {
+                        somme += deltas[l + 1][j] * mlp->w[l + 1][i][j];
+                    }
+                    deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
                 }
-                deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
+            }
+
+            for (int l = 1; l < mlp->npl_size; l++) {
+                for (int i = 0; i < mlp->npl[l - 1] + 1; i++) {
+                    for (int j = 1; j < mlp->npl[l] + 1; j++) {
+                        mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l - 1][i] * deltas[l][j]);
+                    }
+                }
             }
         }
-
-        for (int l = 1; l < mlp->npl_size; l++) {
-            for (int i = 0; i < mlp->npl[l] + 1; i++) {
-                for (int j = 0; j < mlp->npl[l + 1] + 1; j++) {
-                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l - 1][i] * deltas[l][j]);
-                }
-            }
-        }
-
 
         mlp->deltas = deltas;
     }
