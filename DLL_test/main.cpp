@@ -39,10 +39,10 @@ extern "C" {
 
 	DLLEXPORT MLP* create_mlp_model(int* npl, int npl_size);
 	DLLEXPORT void generate_nodes(MLP* mlp, double* inputs);
-	DLLEXPORT double mlp_model_predict_regression(MLP* mlp, double* inputs, bool isReg);
-	DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs, bool isReg);
-	DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg);
-	DLLEXPORT void mlp_model_train_regression(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg);
+	DLLEXPORT double* mlp_model_predict_regression(MLP* mlp, double* inputs, bool isReg);
+	DLLEXPORT double* mlp_model_predict_classification(MLP* mlp, double* inputs, bool isReg);
+	DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha);
+	DLLEXPORT void mlp_model_train_regression(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha);
 }
 
 int main() {
@@ -129,12 +129,12 @@ int main() {
 	// MLP Classification
 	//mlp_model_train_classification(model, inputs, 4, 2, Y, 4, 1000000, 0.001, false);
 	// MLP Regression
-	mlp_model_train_regression(model, inputs, 4, 2, Y, 4, 1000000, 0.001, true);
+	mlp_model_train_classification(model, inputs, 4, 2, Y, 4, 1000000, 0.001);
 	std::cout << std::endl;
-	std::cout << mlp_model_predict_classification(model, &(inputs[0]), true) << std::endl;
-	std::cout << mlp_model_predict_classification(model, &(inputs[2]), true) << std::endl;
-	std::cout << mlp_model_predict_classification(model, &(inputs[4]), true) << std::endl;
-	std::cout << mlp_model_predict_classification(model, &(inputs[6]), true) << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[0]), false)[1] << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[2]), false)[1] << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[4]), false)[1] << std::endl;
+	std::cout << mlp_model_predict_classification(model, &(inputs[6]), false)[1] << std::endl;
 
 	return 0;
 }

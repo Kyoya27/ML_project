@@ -84,6 +84,7 @@ extern "C" {
         }
 
         return somme;*/
+        //return mlp->x[mlp->npl_size - 1][1];
         return mlp->x[mlp->npl_size - 1];
     }
 
@@ -93,7 +94,7 @@ extern "C" {
         return mlp->x[mlp->npl_size - 1];
     }
 
-    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg) {
+    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha) {
         //deltas dernière
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
         std::uniform_real_distribution<float> distribution{ 0, 1 };
@@ -103,7 +104,7 @@ extern "C" {
             auto index = (int)floor(distribution(randomEngine) * dataset_length);
             auto trainingPosition = index * mlp->npl[0];
             auto expectedPosition = index * mlp->npl[mlp->npl_size - 1];
-            generate_nodes(mlp, &(dataset_inputs[trainingPosition]), isReg);
+            generate_nodes(mlp, &(dataset_inputs[trainingPosition]), false);
 
             
             deltas[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1] + 1];
@@ -135,7 +136,7 @@ extern "C" {
         mlp->deltas = deltas;
     }
 
-    DLLEXPORT void mlp_model_train_regression(MLP * mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha, bool isReg) {
+    DLLEXPORT void mlp_model_train_regression(MLP * mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha) {
         //deltas dernière
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
         std::uniform_real_distribution<float> distribution{ 0, 1 };
@@ -145,7 +146,7 @@ extern "C" {
             auto index = (int)floor(distribution(randomEngine) * dataset_length);
             auto trainingPosition = index * mlp->npl[0];
             auto expectedPosition = index * mlp->npl[mlp->npl_size - 1];
-            generate_nodes(mlp, &(dataset_inputs[trainingPosition]), isReg);
+            generate_nodes(mlp, &(dataset_inputs[trainingPosition]), true);
 
 
             deltas[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1] + 1];
