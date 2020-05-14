@@ -26,20 +26,20 @@ extern "C" {
         mlp->npl_size = npl_size;
 
         double*** w1 = new double**[npl_size];
-        for (int l = 0; l < npl_size - 1; l++) {
-            w1[l] = new double* [npl[l] + 1];
-            for (int i = 0; i < npl[l] + 1; i++) {
-                w1[l][i] = new double[npl[l + 1]];
-                for (int j = 0; j < npl[l + 1]; j++) {
+        for (int l = 1; l < npl_size; l++) {
+            w1[l] = new double* [npl[l - 1] + 1];
+            for (int i = 0; i < npl[l - 1] + 1; i++) {
+                w1[l][i] = new double[npl[l] + 1];
+                for (int j = 1; j < npl[l] + 1; j++) {
                     w1[l][i][j] = distribution(randomEngine);
                 }
             }
         }
 
-        w1[npl_size - 1] = new double*[npl[npl_size - 1]];
+        /*w1[npl_size - 1] = new double*[npl[npl_size - 1]];
         for (int i = 0; i < npl[npl_size - 1]; i++) {
             w1[npl_size - 1][i] = new double(distribution(randomEngine));
-        }
+        }*/
 
         mlp->w = w1;
 
@@ -55,38 +55,39 @@ extern "C" {
             nodes[0][i + 1] = inputs[i];
         }
 
-        for (int l = 1; l < mlp->npl_size - 1; l++) {
+        for (int l = 1; l < mlp->npl_size; l++) {
             nodes[l] = new double[mlp->npl[l] + 1];
             nodes[l][0] = 1;
             for (int i = 0; i < mlp->npl[l]; i++) {
                 double sum = 0;
                 for (int j = 0; j < mlp->npl[l - 1] + 1; j++) {
-                    sum += nodes[l - 1][j] * mlp->w[l - 1][j][i];
+                    sum += nodes[l - 1][j] * mlp->w[l][j][i+1];
                 }
                 nodes[l][i + 1] = tanh(sum);
             }
         }
 
-        nodes[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1]];
-        for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
-            double sum = 0;
-            for (int j = 0; j < mlp->npl[mlp->npl_size - 2] + 1; j++) {
-                sum += nodes[mlp->npl_size - 2][j] * mlp->w[mlp->npl_size - 2][j][i];
-            }
-            nodes[mlp->npl_size - 1][i] = tanh(sum);
-        }
+        //nodes[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1]];
+        //for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
+        //    double sum = 0;
+        //    for (int j = 0; j < mlp->npl[mlp->npl_size - 2] + 1; j++) {
+        //        sum += nodes[mlp->npl_size - 2][j] * mlp->w[mlp->npl_size - 2][j][i];
+        //    }
+        //    nodes[mlp->npl_size - 1][i] = tanh(sum);
+        //}
 
         mlp->x = nodes;
     }
 
     DLLEXPORT double mlp_model_predict_regression(MLP* mlp) {
-        double somme = 0;
+   /*     double somme = 0;
         for (int i = 0; i < mlp->npl[mlp->npl_size - 1]; i++) {
 
             somme += mlp->x[mlp->npl_size - 1][i] * mlp->w[mlp->npl_size - 1][i][0];
         }
-        std::cout << somme << std::endl;
-        return somme;
+
+        return somme;*/
+        return mlp->x[mlp->npl_size - 1][1];
     }
 
     DLLEXPORT double mlp_model_predict_classification(MLP* mlp, double* inputs) {
@@ -94,49 +95,44 @@ extern "C" {
         return mlp_model_predict_regression(mlp) >= 0 ? 1.0 : -1.0;
     }
 
-    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, double alpha) {
+    DLLEXPORT void mlp_model_train_classification(MLP* mlp, double* dataset_inputs, int dataset_length, int inputs_size, double* dataset_expected_outputs, int outputs_size, int epoch, double alpha) {
         //deltas dernière
         std::default_random_engine randomEngine(std::chrono::system_clock::now().time_since_epoch().count());
         std::uniform_real_distribution<float> distribution{ 0, 1 };
-        auto trainingPosition = (int)floor(distribution(randomEngine) * 1) * (mlp->npl[0] + 1);
-        generate_nodes(mlp, &(dataset_inputs[trainingPosition]));
-
         double** deltas = new double* [mlp->npl_size];
-        deltas[mlp->npl_size - 1] = new double[mlp->npl_size - 1];
 
-        for (int j = 0; j < mlp->npl[mlp->npl_size - 1]; j++) {
-            deltas[mlp->npl_size - 1][j] = (1 - pow(mlp->x[mlp->npl_size - 1][j], 2)) * (mlp->x[mlp->npl_size - 1][j] - dataset_expected_outputs[j]);
-        }
+        for (int e = 0; e < epoch; e++) {
+            auto index = (int)floor(distribution(randomEngine) * dataset_length);
+            auto trainingPosition = index * mlp->npl[0];
+            auto expectedPosition = index * mlp->npl[mlp->npl_size - 1];
+            generate_nodes(mlp, &(dataset_inputs[trainingPosition]));
 
-        for (int l = mlp->npl_size - 2; l >= 0; l--) {
-            deltas[l] = new double[mlp->npl[l] + 1];
-            for (int i = 0; i < mlp->npl[l] + 1; i++) {
-                double somme = 0;
-                for (int j = 0; j < mlp->npl[l + 1]; j++) {
-                    somme += deltas[l + 1][j] * mlp->w[l][i][j];
+            
+            deltas[mlp->npl_size - 1] = new double[mlp->npl[mlp->npl_size - 1] + 1];
+
+            for (int j = 1; j < mlp->npl[mlp->npl_size - 1] + 1; j++) {
+                deltas[mlp->npl_size - 1][j] = (1 - pow(mlp->x[mlp->npl_size - 1][j], 2)) * (mlp->x[mlp->npl_size - 1][j] - dataset_expected_outputs[j - 1 + expectedPosition]);
+            }
+
+            for (int l = mlp->npl_size - 2; l >= 1; l--) {
+                deltas[l] = new double[mlp->npl[l] + 1];
+                for (int i = 1; i < mlp->npl[l] + 1; i++) {
+                    double somme = 0;
+                    for (int j = 1; j < mlp->npl[l + 1] + 1; j++) {
+                        somme += deltas[l + 1][j] * mlp->w[l+1][i][j];
+                    }
+                    deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
                 }
-                deltas[l][i] = (1 - pow(mlp->x[l][i], 2)) * somme;
             }
-        }
 
-        for (int l = 0; l < mlp->npl_size -1; l++) {
-            for (int i = 0; i < mlp->npl[l]; i++) {
-                for (int j = 0; j < mlp->npl[l + 1]; j++) {
-                    mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l][i] * deltas[l+1][j]);
+            for (int l = 1; l < mlp->npl_size; l++) {
+                for (int i = 0; i < mlp->npl[l - 1] + 1; i++) {
+                    for (int j = 1; j < mlp->npl[l] + 1; j++) {
+                        mlp->w[l][i][j] = mlp->w[l][i][j] - (alpha * mlp->x[l - 1][i] * deltas[l][j]);
+                    }
                 }
             }
         }
-
-        std::cout << "Delta :" << std::endl << "[" << std::endl;
-        for (int l = 0; l < mlp->npl_size; l++) {
-            std::cout << "\t[ ";
-            for (int i = 0; i < mlp->npl[l]; i++) {
-                std::cout << deltas[l][i] << " ";
-            }
-            std::cout << "]" << std::endl;
-        }
-        std::cout << "]" << std::endl;
-
 
         mlp->deltas = deltas;
     }
